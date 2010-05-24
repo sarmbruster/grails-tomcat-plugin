@@ -6,8 +6,6 @@ ant.taskdef(name:"deploy",classname:"org.apache.catalina.ant.DeployTask")
 ant.taskdef(name:"list",classname:"org.apache.catalina.ant.ListTask")
 ant.taskdef(name:"undeploy",classname:"org.apache.catalina.ant.UndeployTask")
 
-
-
 target(main: '''\
 Script used to interact with remote Tomcat. The following subcommands are available:
 
@@ -91,17 +89,6 @@ See http://tomcat.apache.org/tomcat-6.0-doc/config/systemprops.html for more inf
                 event("PostDeploy", [it])
             }
 	}
-}
-
-def _list = {
-    url.each {
-        println "Listing applications of Tomcat $it"
-        list(
-               url:it,
-               username:user,
-               password:pass)
-    }
-
 }
 
 setDefaultTarget("main")
