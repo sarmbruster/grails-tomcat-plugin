@@ -21,28 +21,35 @@ grails tomcat undeploy - Undeploy from a tomcat server
 	def user = config.tomcat.deploy.username ?: 'manager'
 	def pass = config.tomcat.deploy.password ?: 'secret'	
 	def url = config.tomcat.deploy.url ?: 'http://localhost:8080/manager'
-	
+    if (! (url instanceof List)) {
+        url = [ url ]
+    }
+
 	switch(cmd) {
 		case 'deploy':
 			war()
-			println "Deploying application $serverContextPath to Tomcat"
-		    deploy(war:warName,
-				   url:url,
-				   path:serverContextPath,
-				   username:user,
-				   password:pass)
-		
+            url.each {
+                println "Deploying application $serverContextPath to Tomcat $it"
+                event("PreDeploy", [it])
+                deploy(war:warName,
+                       url:it,
+                       path:serverContextPath,
+                       username:user,
+                       password:pass)
+                event("PostDeploy", [it])
+            }
 		break
 		case 'list':
-		    list(
-				   url:url,
-				   username:user,
-				   password:pass)
-		
+            url.each {
+                println "Listing applications of Tomcat $it"
+                list(
+                       url:it,
+                       username:user,
+                       password:pass)
+            }
 		break
 		case 'undeploy':
 			configureServerContextPath()
-			println "Undeploying application $serverContextPath from Tomcat"
 			println '''\
 NOTE: If you experience a classloading error during undeployment you need to take the following steps:					
 
@@ -51,13 +58,49 @@ NOTE: If you experience a classloading error during undeployment you need to tak
 
 See http://tomcat.apache.org/tomcat-6.0-doc/config/systemprops.html for more information
 '''
-		    undeploy(
-				   url:url,
-				   path:serverContextPath,
-				   username:user,
-				   password:pass)		
-		
+            url.each {
+                println "Undeploying application $serverContextPath from Tomcat $it"
+                event("PreUndeploy", [it])
+                undeploy(
+                       url:it,
+                       path:serverContextPath,
+                       username:user,
+                       password:pass)
+                event("PostUndeploy", [it])
+            }
+        break
+        case "redeploy":
+            war()
+            configureServerContextPath()
+            url.each { 
+                println "Undeploying application $serverContextPath from Tomcat $it"
+                event("PreUndeploy", [it])
+                undeploy(
+                       url:it,
+                       path:serverContextPath,
+                       username:user,
+                       password:pass)
+                event("PostUndeploy", [it])
+                event("PreDeploy", [it])
+                println "Deploying application $serverContextPath to Tomcat $it"
+                deploy(war:warName,
+                       url:it,
+                       path:serverContextPath,
+                       username:user,
+                       password:pass)
+                event("PostDeploy", [it])
+            }
 	}
+}
+
+def _list = {
+    url.each {
+        println "Listing applications of Tomcat $it"
+        list(
+               url:it,
+               username:user,
+               password:pass)
+    }
 
 }
 
